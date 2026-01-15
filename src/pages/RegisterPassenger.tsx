@@ -26,7 +26,20 @@ const RegisterPassenger = () => {
         if (error) {
             alert('Erro: ' + error.message)
         } else {
+            // Get driver info for the message
+            const savedProfile = localStorage.getItem('driver_profile');
+            const driverName = savedProfile ? JSON.parse(savedProfile).full_name : 'seu motorista';
+
             alert('Passageiro cadastrado!')
+
+            // Send welcome WhatsApp
+            if (phoneNumber) {
+                const message = encodeURIComponent(
+                    `Seja bem vindo ao aplicativo RecordsTrip! 🚗\n\nSou ${driverName} e acabei de registrar seu contato para facilitar nossas próximas viagens.`
+                );
+                window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}?text=${message}`, '_blank');
+            }
+
             navigate(-1)
         }
         setLoading(false)
@@ -60,7 +73,7 @@ const RegisterPassenger = () => {
                     <label>TELEFONE</label>
                     <div className="input-wrapper">
                         <input
-                            placeholder="+55 (11) 99999-9999"
+                            placeholder="Digite o número do telefone"
                             value={phoneNumber}
                             onChange={e => setPhoneNumber(e.target.value)}
                         />

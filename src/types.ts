@@ -32,4 +32,6 @@ export interface DriverProfile {
     include_signature: boolean;
     is_active: boolean;
     is_admin: boolean;
+    password?: string;
+    email?: string;
 }

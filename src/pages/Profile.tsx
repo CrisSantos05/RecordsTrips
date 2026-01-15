@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
-import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert, LogOut } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
 
 interface ProfileProps {
     currentProfile: DriverProfile;
+    onLogout: () => void;
 }
 
-const Profile = ({ currentProfile }: ProfileProps) => {
+const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
     const [profile, setProfile] = useState<DriverProfile>(currentProfile)
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
@@ -137,6 +138,13 @@ const Profile = ({ currentProfile }: ProfileProps) => {
 
             <button className="btn-primary" onClick={handleSave} disabled={loading} style={{ backgroundColor: '#1E88E5' }}>
                 <Save size={20} /> {loading ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+
+            <button
+                onClick={onLogout}
+                style={{ width: '100%', padding: '15px', color: 'var(--error)', fontWeight: 600, marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+            >
+                <LogOut size={18} /> DESCONECTAR CONTA
             </button>
 
             <div style={{ textAlign: 'center', color: '#BDBDBD', fontSize: '0.7rem', marginTop: 15, textTransform: 'uppercase' }}>

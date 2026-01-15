@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Car, History, BarChart3, Settings } from 'lucide-react'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
+import { Car, History, BarChart3, Settings, LogOut } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { DriverProfile } from './types'
 import Drive from './pages/Drive'
@@ -10,14 +10,16 @@ import Profile from './pages/Profile'
 import RegisterPassenger from './pages/RegisterPassenger'
 import Admin from './pages/Admin'
 import Blocked from './pages/Blocked'
+import Login from './pages/Login'
 import './index.css'
 
 const BottomNav = () => {
     const location = useLocation();
     const isActive = (path: string) => location.pathname === path;
 
-    // Don't show bottom nav on admin or register pages
-    if (location.pathname === '/admin' || location.pathname === '/register-passenger') return null;
+    // Don't show bottom nav on certain pages
+    const hiddenPages = ['/admin', '/register-passenger', '/login'];
+    if (hiddenPages.includes(location.pathname)) return null;
 
     return (
         <div className="bottom-nav">
@@ -46,20 +48,37 @@ function App() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetchProfile()
+        const savedProfile = localStorage.getItem('driver_profile')
+        if (savedProfile) {
+            setProfile(JSON.parse(savedProfile))
+        }
+        setLoading(false)
     }, [])
 
-    async function fetchProfile() {
-        // Current simple logic: fetch the first driver found
-        const { data } = await supabase.from('driver_profile').select('*').limit(1).single()
-        if (data) setProfile(data)
-        setLoading(false)
+    const handleLogin = (newProfile: DriverProfile) => {
+        setProfile(newProfile)
+        localStorage.setItem('driver_profile', JSON.stringify(newProfile))
+    }
+
+    const handleLogout = () => {
+        setProfile(null)
+        localStorage.removeItem('driver_profile')
     }
 
     if (loading) return <div className="container" style={{ justifyContent: 'center', alignItems: 'center' }}>Carregando...</div>
-    if (!profile) return <div className="container" style={{ justifyContent: 'center', alignItems: 'center' }}>Erro ao carregar perfil.</div>
 
-    // If driver is not active, block access (except for admin possibly, but let's keep it simple)
+    if (!profile) {
+        return (
+            <Router>
+                <Routes>
+                    <Route path="/login" element={<Login onLogin={handleLogin} />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Router>
+        )
+    }
+
+    // If driver is not active
     if (profile && !profile.is_active) {
         return <Blocked />
     }
@@ -68,12 +87,13 @@ function App() {
         <Router>
             <div className="container">
                 <Routes>
-                    <Route path="/" element={<Drive />} />
+                    <Route path="/" element={profile.is_admin ? <Navigate to="/admin" replace /> : <Drive />} />
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/earnings" element={<Earnings />} />
-                    <Route path="/profile" element={<Profile currentProfile={profile} />} />
+                    <Route path="/profile" element={<Profile currentProfile={profile} onLogout={handleLogout} />} />
                     <Route path="/register-passenger" element={<RegisterPassenger />} />
-                    <Route path="/admin" element={<Admin />} />
+                    <Route path="/admin" element={<Admin onLogout={handleLogout} />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
                 <BottomNav />
             </div>
