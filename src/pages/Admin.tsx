@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale'
 
 const Admin = ({ onLogout }: { onLogout: () => void }) => {
     const [drivers, setDrivers] = useState<DriverProfile[]>([])
+    const [balances, setBalances] = useState<{ [key: string]: number }>({})
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
@@ -40,8 +41,22 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
 
     async function fetchDrivers() {
         setLoading(true)
-        const { data } = await supabase.from('driver_profile').select('*').order('full_name')
-        if (data) setDrivers(data)
+        const { data: driversData } = await supabase.from('driver_profile').select('*').order('full_name')
+        if (driversData) {
+            setDrivers(driversData)
+
+            // Fetch pending balances for all drivers
+            const { data: tripsData } = await supabase
+                .from('trips')
+                .select('driver_id, amount')
+                .eq('status', 'pending')
+
+            const pendingBalances: { [key: string]: number } = {}
+            tripsData?.forEach(trip => {
+                pendingBalances[trip.driver_id] = (pendingBalances[trip.driver_id] || 0) + Number(trip.amount)
+            })
+            setBalances(pendingBalances)
+        }
         setLoading(false)
     }
 
@@ -189,6 +204,22 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
                                 </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                {balances[driver.id] > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            const message = encodeURIComponent(`Olá ${driver.full_name}, aqui é a administração do RecordsTrip. Consta em nosso sistema um valor pendente de acerto de R$ ${balances[driver.id].toFixed(2)}. Por favor, verifique seus registros.`);
+                                            window.open(`https://wa.me/${driver.phone_number?.replace(/\D/g, '')}?text=${message}`, '_blank');
+                                        }}
+                                        style={{
+                                            padding: '6px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 700,
+                                            backgroundColor: '#FFF3E0', color: '#E65100',
+                                            textTransform: 'uppercase', border: '1px solid #FFE0B2',
+                                            display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center'
+                                        }}
+                                    >
+                                        <Phone size={12} /> Cobrar R$ {balances[driver.id].toFixed(2)}
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => toggleStatus(driver.id, driver.is_active)}
                                     style={{

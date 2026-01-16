@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Search } from 'lucide-react'
+import { ChevronLeft, User, Search, Phone } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Trip } from '../types'
 import { format } from 'date-fns'
@@ -31,6 +31,18 @@ const HistoryPage = () => {
         const { data } = await query
         if (data) setTrips(data)
         setLoading(false)
+    }
+
+    async function handleToggleStatus(tripId: string, currentStatus: string) {
+        const newStatus = currentStatus === 'paid' ? 'pending' : 'paid'
+        const { error } = await supabase
+            .from('trips')
+            .update({ status: newStatus })
+            .eq('id', tripId)
+
+        if (!error) {
+            setTrips(trips.map(t => t.id === tripId ? { ...t, status: newStatus } : t))
+        }
     }
 
     const totals = trips.reduce((acc, trip) => {
@@ -80,7 +92,7 @@ const HistoryPage = () => {
                 <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>Nenhuma viagem encontrada</div>
             ) : (
                 trips.map(trip => (
-                    <div key={trip.id} className="history-item">
+                    <div key={trip.id} className="history-item" style={{ cursor: 'pointer' }}>
                         {trip.passenger?.avatar_url ? (
                             <img src={trip.passenger.avatar_url} className="avatar" alt="" />
                         ) : (
@@ -95,15 +107,49 @@ const HistoryPage = () => {
                             </div>
                         </div>
                         <div className="history-amount">
-                            <div className="price">R${Number(trip.amount).toFixed(2)}</div>
-                            <div className={`badge ${trip.status}`}>{trip.status === 'paid' ? 'Pago' : 'Pendente'}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+                                <div
+                                    onClick={() => handleToggleStatus(trip.id, trip.status)}
+                                    className={`badge ${trip.status}`}
+                                    style={{ cursor: 'pointer', userSelect: 'none' }}
+                                >
+                                    {trip.status === 'paid' ? 'PAGO' : 'PENDENTE'}
+                                </div>
+                                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: trip.status === 'pending' ? 'var(--error)' : 'inherit' }}>
+                                    R$ {Number(trip.amount).toFixed(2)}
+                                </div>
+                                {trip.status === 'pending' && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const message = encodeURIComponent(`Olá ${trip.passenger?.full_name}, aqui é o seu motorista. Passando para lembrar da nossa viagem no valor de R$ ${Number(trip.amount).toFixed(2)}. Segue o PIX para acerto: [SUA CHAVE AQUI]`);
+                                            window.open(`https://wa.me/${trip.passenger?.phone_number?.replace(/\D/g, '')}?text=${message}`, '_blank');
+                                        }}
+                                        style={{
+                                            fontSize: '0.7rem',
+                                            padding: '5px 10px',
+                                            backgroundColor: '#E8F5E9',
+                                            color: '#2E7D32',
+                                            borderRadius: 8,
+                                            fontWeight: 700,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            border: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <Phone size={12} /> COBRAR
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))
             )}
 
             <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '0.8rem' }}>
-                Carregando viagens antigas...
+                Fim do histórico
             </div>
         </div>
     )

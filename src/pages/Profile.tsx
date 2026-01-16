@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert, LogOut } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert, LogOut, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
@@ -12,6 +12,7 @@ interface ProfileProps {
 const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
     const [profile, setProfile] = useState<DriverProfile>(currentProfile)
     const [loading, setLoading] = useState(false)
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     const handleSave = async () => {
@@ -22,12 +23,64 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
             vehicle_model: profile.vehicle_model,
             phone_number: profile.phone_number,
             show_license_plate: profile.show_license_plate,
-            include_signature: profile.include_signature
+            include_signature: profile.include_signature,
+            avatar_url: profile.avatar_url,
+            report_logo_url: profile.report_logo_url,
+            signature_url: profile.signature_url,
+            car_document_url: profile.car_document_url,
+            cnh_url: profile.cnh_url
         }).eq('id', profile.id)
 
         if (error) alert(error.message)
-        else alert('Perfil atualizado!')
+        else {
+            alert('Perfil atualizado!')
+            localStorage.setItem('driver_profile', JSON.stringify(profile))
+        }
         setLoading(false)
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setProfile({ ...profile, avatar_url: reader.result as string })
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const handleCNHChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setProfile({ ...profile, cnh_url: reader.result as string })
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setProfile({ ...profile, signature_url: reader.result as string })
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const handleCarDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setProfile({ ...profile, car_document_url: reader.result as string })
+            }
+            reader.readAsDataURL(file)
+        }
     }
 
     return (
@@ -35,19 +88,67 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Perfil do Motorista</h1>
-                <button><CheckCircle2 color="#1E88E5" /></button>
+                <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
             </header>
+
+            {showHelp && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+                }}>
+                    <div className="card" style={{ maxWidth: 400, width: '100%', position: 'relative', padding: '30px 20px' }}>
+                        <h2 style={{ fontSize: '1.4rem', marginBottom: 15, color: '#1E88E5', textAlign: 'center' }}>Ajuda do Perfil</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', lineHeight: '1.4' }}>
+                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Foto:</span> Sua foto de identificação (Opcional).</div>
+                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Documentos:</span> Carregue a foto da sua **CNH** e do **Documento do Carro** nos campos pontilhados.</div>
+                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Dados:</span> Mantenha placa e modelo do veículo sempre atualizados.</div>
+                        </div>
+                        <button
+                            className="btn-primary"
+                            style={{ marginTop: 25, backgroundColor: '#1E88E5' }}
+                            onClick={() => setShowHelp(false)}
+                        >
+                            Entendi!
+                        </button>
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '30px 0' }}>
                 <div style={{ position: 'relative' }}>
-                    <div className="avatar" style={{ width: 120, height: 120, borderRadius: '50%', margin: 0, background: 'linear-gradient(135deg, #d4a373, #faedcd)' }}>
-                        {profile.avatar_url && <img src={profile.avatar_url} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />}
+                    <div className="avatar" style={{
+                        width: 120, height: 120, borderRadius: '50%', margin: 0,
+                        background: 'linear-gradient(135deg, #eee, #f5f5f5)',
+                        overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '4px solid white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                    }}>
+                        {profile.avatar_url ? (
+                            <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            <User size={60} color="#ccc" />
+                        )}
                     </div>
-                    <button style={{ position: 'absolute', bottom: 5, right: 5, background: '#1E88E5', color: 'white', padding: 8, borderRadius: '50%', border: '2px solid white' }}>
+                    <label
+                        htmlFor="avatar-input"
+                        style={{ position: 'absolute', bottom: 5, right: 5, background: '#1E88E5', color: 'white', padding: 8, borderRadius: '50%', border: '2px solid white', cursor: 'pointer' }}
+                    >
                         <Camera size={16} />
-                    </button>
+                    </label>
+                    <input
+                        id="avatar-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                    />
                 </div>
-                <button style={{ color: '#1E88E5', fontWeight: 600, marginTop: 15, fontSize: '0.9rem' }}>Editar Foto do Perfil</button>
+                <button
+                    onClick={() => document.getElementById('avatar-input')?.click()}
+                    style={{ color: '#1E88E5', fontWeight: 600, marginTop: 15, fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                    Foto do Motorista (Opcional)
+                </button>
             </div>
 
             {profile.is_admin && (
@@ -103,13 +204,34 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
 
             <div className="card">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: 20 }}>
-                    <div style={{ border: '1px dashed #ccc', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-                        <div style={{ color: '#ccc', marginBottom: 10 }}><Camera size={24} /></div>
-                        <div style={{ fontSize: '0.7rem', color: '#999' }}>Carregar PNG</div>
+                    <div
+                        onClick={() => document.getElementById('cnh-input')?.click()}
+                        style={{ border: '2px dashed #E3F2FD', borderRadius: 12, padding: 20, textAlign: 'center', cursor: 'pointer', background: profile.cnh_url ? '#fff' : '#f8fbff', overflow: 'hidden', height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        {profile.cnh_url ? (
+                            <img src={profile.cnh_url} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        ) : (
+                            <>
+                                <div style={{ color: '#1E88E5', marginBottom: 5 }}><Camera size={24} /></div>
+                                <div style={{ fontSize: '0.7rem', color: '#1E88E5', fontWeight: 600 }}>CNH</div>
+                            </>
+                        )}
+                        <input id="cnh-input" type="file" accept="image/*" onChange={handleCNHChange} style={{ display: 'none' }} />
                     </div>
-                    <div style={{ border: '1px dashed #ccc', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-                        <div style={{ color: '#ccc', marginBottom: 10 }}><FileText size={24} /></div>
-                        <div style={{ fontSize: '0.7rem', color: '#999' }}>Adicionar Digital</div>
+
+                    <div
+                        onClick={() => document.getElementById('cardoc-input')?.click()}
+                        style={{ border: '2px dashed #E3F2FD', borderRadius: 12, padding: 20, textAlign: 'center', cursor: 'pointer', background: profile.car_document_url ? '#fff' : '#f8fbff', overflow: 'hidden', height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        {profile.car_document_url ? (
+                            <img src={profile.car_document_url} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        ) : (
+                            <>
+                                <div style={{ color: '#1E88E5', marginBottom: 5 }}><Car size={24} /></div>
+                                <div style={{ fontSize: '0.7rem', color: '#1E88E5', fontWeight: 600 }}>Doc. do Carro</div>
+                            </>
+                        )}
+                        <input id="cardoc-input" type="file" accept="image/*" onChange={handleCarDocChange} style={{ display: 'none' }} />
                     </div>
                 </div>
 

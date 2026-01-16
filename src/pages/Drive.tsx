@@ -13,11 +13,51 @@ const Drive = () => {
   const [status, setStatus] = useState<'paid' | 'pending'>('paid')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
+  const [pendingBalance, setPendingBalance] = useState(0)
+  const [showHelp, setShowHelp] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchPassengers()
   }, [])
+
+  useEffect(() => {
+    if (selectedPassenger) {
+      fetchPendingBalance(selectedPassenger.id)
+    } else {
+      setPendingBalance(0)
+    }
+  }, [selectedPassenger])
+
+  async function fetchPendingBalance(passengerId: string) {
+    const { data } = await supabase
+      .from('trips')
+      .select('amount')
+      .eq('passenger_id', passengerId)
+      .eq('status', 'pending')
+
+    if (data) {
+      const total = data.reduce((acc, trip) => acc + Number(trip.amount), 0)
+      setPendingBalance(total)
+    }
+  }
+
+  async function handleSettleBalance() {
+    if (!selectedPassenger) return
+
+    setLoading(true)
+    const { error } = await supabase
+      .from('trips')
+      .update({ status: 'paid' })
+      .eq('passenger_id', selectedPassenger.id)
+      .eq('status', 'pending')
+
+    if (!error) {
+      alert('Todas as pendências de ' + selectedPassenger.full_name + ' foram pagas!')
+      setPendingBalance(0)
+    }
+    setLoading(false)
+  }
 
   async function fetchPassengers() {
     const { data } = await supabase.from('passengers').select('*').order('full_name')
@@ -56,11 +96,64 @@ const Drive = () => {
       <header style={{ margin: '-20px -20px 20px -20px' }}>
         <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
         <h1>Nova Viagem</h1>
-        <button><HelpCircle /></button>
+        <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
       </header>
 
+      {showHelp && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+        }}>
+          <div className="card" style={{ maxWidth: 400, width: '100%', position: 'relative', padding: '30px 20px' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: 15, color: 'var(--primary)', textAlign: 'center' }}>Como usar esta página</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', lineHeight: '1.4' }}>
+              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>1.</span> Selecione o passageiro na lista ou use a "Seleção Rápida" no topo.</div>
+              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>2.</span> Se o passageiro tiver dívidas pendentes, um card laranja aparecerá para você "Quitar Tudo" se desejar.</div>
+              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>3.</span> Digite o valor dos ganhos desta viagem.</div>
+              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>4.</span> Escolha se a viagem foi Paga agora ou se ficará Pendente.</div>
+              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>5.</span> Clique em "Salvar Viagem" para registrar permanentemente.</div>
+            </div>
+            <button
+              className="btn-primary"
+              style={{ marginTop: 25 }}
+              onClick={() => setShowHelp(false)}
+            >
+              Entendi!
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, display: 'block' }}>SELEÇÃO RÁPIDA (RECENTES)</label>
+        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
+          {passengers.slice(0, 5).map(p => (
+            <div
+              key={p.id}
+              onClick={() => setSelectedPassenger(p)}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 70, cursor: 'pointer',
+                opacity: selectedPassenger?.id === p.id ? 1 : 0.6
+              }}
+            >
+              <div style={{
+                width: 50, height: 50, borderRadius: '50%', background: '#eee',
+                border: selectedPassenger?.id === p.id ? '2px solid var(--primary)' : '2px solid transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+              }}>
+                {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#999" />}
+              </div>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', whiteSpace: 'nowrap' }}>
+                {p.full_name.split(' ')[0]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Passenger Selection */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: 20 }}>
         <div className="avatar" style={{ marginRight: 0 }}>
           {selectedPassenger?.avatar_url ? (
             <img src={selectedPassenger.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} />
@@ -85,13 +178,51 @@ const Drive = () => {
             ))}
           </select>
           <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>
-            {selectedPassenger ? `${selectedPassenger.passenger_class}` : 'Selecione para registrar ganhos'}
+            {selectedPassenger ? `${selectedPassenger.passenger_class}` : 'Selecione para registrar'}
           </div>
         </div>
         <Link to="/register-passenger" style={{ color: 'var(--primary)' }}>
           <Plus />
         </Link>
       </div>
+
+      {pendingBalance > 0 && (
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)',
+          border: '1px solid #FFCC80',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '15px',
+          marginBottom: '20px',
+          animation: 'slideDown 0.3s ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Clock size={24} color="#BF360C" />
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#E65100', textTransform: 'uppercase' }}>Dívida Pendente</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#BF360C' }}>R$ {pendingBalance.toFixed(2)}</div>
+            </div>
+          </div>
+          <button
+            onClick={handleSettleBalance}
+            disabled={loading}
+            style={{
+              backgroundColor: '#BF360C',
+              color: 'white',
+              border: 'none',
+              padding: '10px 15px',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(191, 54, 12, 0.2)'
+            }}
+          >
+            QUITAR TUDO
+          </button>
+        </div>
+      )}
 
       <div className="input-group">
         <label>DATA DA VIAGEM</label>

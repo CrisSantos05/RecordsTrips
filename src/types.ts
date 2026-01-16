@@ -28,6 +28,8 @@ export interface DriverProfile {
     avatar_url?: string;
     report_logo_url?: string;
     signature_url?: string;
+    car_document_url?: string;
+    cnh_url?: string;
     show_license_plate: boolean;
     include_signature: boolean;
     is_active: boolean;
