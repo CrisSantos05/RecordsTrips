@@ -99,6 +99,15 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
         const generatedPassword = newDriver.password || Math.random().toString(36).slice(-6);
         const cleanPhone = newDriver.phone_number?.replace(/\D/g, '') || '';
 
+        // TÉCNICA "OPEN EARLY": Abrir a janela ANTES do await para evitar bloqueio em mobile
+        let whatsappWindow: Window | null = null;
+        if (cleanPhone) {
+            whatsappWindow = window.open('', '_blank');
+            if (whatsappWindow) {
+                whatsappWindow.document.write('<html><body style="background:#25D366; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;"><h3>Gerando link do WhatsApp...</h3></body></html>');
+            }
+        }
+
         setLoading(true)
         const { data, error } = await supabase.from('driver_profile').insert({
             ...newDriver,
@@ -108,6 +117,7 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
         }).select().single()
 
         if (error) {
+            if (whatsappWindow) whatsappWindow.close(); // Fechar janela se der erro
             alert('Erro ao adicionar motorista: ' + error.message)
             setLoading(false)
             return
@@ -115,20 +125,17 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
 
         if (data) {
             // Enviar notificação WhatsApp
-            if (cleanPhone) {
+            if (cleanPhone && whatsappWindow) {
                 const message = encodeURIComponent(
                     `*RecordsTrip - Acesso Liberado!*\n\nOlá ${data.full_name}, seu acesso ao aplicativo foi criado.\n\n*Seus dados de login:*\n📧 E-mail: ${data.email}\n🔑 Senha: ${generatedPassword}\n\nAcesse agora: ${window.location.origin}`
                 );
                 const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
 
-                // Tentar abrir WhatsApp direto
-                const win = window.open(whatsappUrl, '_blank');
-
-                // Fallback para bloqueadores de popup
-                if (!win) {
-                    alert('Pop-up bloqueado! Não foi possível abrir o WhatsApp automaticamente. Verifique as permissões do navegador.');
-                    console.log('WhatsApp Link:', whatsappUrl);
-                }
+                // Atualizar a URL da janela já aberta
+                whatsappWindow.location.href = whatsappUrl;
+            } else if (cleanPhone && !whatsappWindow) {
+                // Fallback caso a janela não tenha aberto no inicio
+                alert('Motorista salvo! Porém o pop-up do WhatsApp foi bloqueado pelo navegador. Verifique as permissões.');
             }
 
             setDrivers([...drivers, data])
