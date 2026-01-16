@@ -16,55 +16,68 @@ const RegisterPassenger = () => {
             return
         }
 
-        // Preparar dados do WhatsApp ANTES da operação assíncrona
-        const savedProfile = localStorage.getItem('driver_profile');
-        if (!savedProfile) {
-            alert('Erro: Perfil do motorista não encontrado. Faça login novamente.')
-            return
-        }
-
-        const driverProfile = JSON.parse(savedProfile);
-        const driverId = driverProfile.id;
-        const driverName = driverProfile.full_name || 'seu motorista';
+        // TÉCNICA "OPEN EARLY": Abrir janela do WhatsApp agora (se tiver telefone)
         const cleanPhone = phoneNumber.replace(/\D/g, '');
-
-        if (!driverId) {
-            alert('Erro: ID do motorista não encontrado. Faça login novamente.')
-            return
+        let whatsappWindow: Window | null = null;
+        if (cleanPhone) {
+            whatsappWindow = window.open('', '_blank');
+            if (whatsappWindow) {
+                whatsappWindow.document.write('<html><body style="background:#25D366; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;"><h3>Gerando link do WhatsApp...</h3></body></html>');
+            }
         }
 
         setLoading(true)
+
+        // 1. Obter usuário autenticado
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            if (whatsappWindow) whatsappWindow.close();
+            alert('Sessão expirada. Faça login novamente.');
+            setLoading(false);
+            navigate('/');
+            return;
+        }
+
+        // 2. Buscar perfil vinculado ao Auth ID (Garantia para RLS)
+        const { data: profile, error: profileError } = await supabase
+            .from('driver_profile')
+            .select('id, full_name')
+            .eq('auth_id', user.id)
+            .single();
+
+        if (profileError || !profile) {
+            if (whatsappWindow) whatsappWindow.close();
+            alert('Erro de Permissão: Seu usuário não está vinculado a um perfil de motorista. Saia e entre novamente.');
+            setLoading(false);
+            return;
+        }
+
+        // 3. Inserir Passageiro
         const { error } = await supabase.from('passengers').insert({
-            driver_id: driverId,
+            driver_id: profile.id, // ID validado pelo RLS
             full_name: fullName,
             phone_number: phoneNumber,
             is_favorite: isFavorite
-        })
+        });
 
         if (error) {
-            alert('Erro: ' + error.message)
-            setLoading(false)
-            return
+            if (whatsappWindow) whatsappWindow.close();
+            alert('Erro ao salvar: ' + error.message);
+            setLoading(false);
+            return;
         }
 
-        // Passageiro cadastrado com sucesso
-        alert('Passageiro cadastrado!')
-
-        // Enviar WhatsApp de boas-vindas
-        if (cleanPhone) {
+        // 4. Sucesso e Redirecionar WhatsApp
+        if (cleanPhone && whatsappWindow) {
+            const driverName = profile.full_name || 'seu motorista';
             const message = encodeURIComponent(
                 `Seja bem vindo ao aplicativo RecordsTrip! 🚗\n\nSou ${driverName} e acabei de registrar seu contato para facilitar nossas próximas viagens.`
             );
-            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
-
-            // Usar link direto para evitar bloqueio de popup
-            const link = document.createElement('a');
-            link.href = whatsappUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            whatsappWindow.location.href = `https://wa.me/${cleanPhone}?text=${message}`;
+        } else if (cleanPhone && !whatsappWindow) {
+            alert('Passageiro salvo! Pop-up do WhatsApp foi bloqueado.');
+        } else {
+            alert('Passageiro cadastrado com sucesso!');
         }
 
         setLoading(false)
