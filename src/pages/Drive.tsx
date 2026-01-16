@@ -60,7 +60,19 @@ const Drive = () => {
   }
 
   async function fetchPassengers() {
-    const { data } = await supabase.from('passengers').select('*').order('full_name')
+    // Obter ID do motorista logado
+    const savedProfile = localStorage.getItem('driver_profile')
+    if (!savedProfile) return
+
+    const currentDriverId = JSON.parse(savedProfile).id
+    if (!currentDriverId) return
+
+    // Buscar apenas passageiros deste motorista
+    const { data } = await supabase
+      .from('passengers')
+      .select('*')
+      .eq('driver_id', currentDriverId)
+      .order('full_name')
     if (data) setPassengers(data)
   }
 

@@ -1,5 +1,6 @@
 export interface Passenger {
     id: string;
+    driver_id: string;
     full_name: string;
     phone_number: string;
     is_favorite: boolean;

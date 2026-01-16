@@ -18,11 +18,24 @@ const RegisterPassenger = () => {
 
         // Preparar dados do WhatsApp ANTES da operação assíncrona
         const savedProfile = localStorage.getItem('driver_profile');
-        const driverName = savedProfile ? JSON.parse(savedProfile).full_name : 'seu motorista';
+        if (!savedProfile) {
+            alert('Erro: Perfil do motorista não encontrado. Faça login novamente.')
+            return
+        }
+
+        const driverProfile = JSON.parse(savedProfile);
+        const driverId = driverProfile.id;
+        const driverName = driverProfile.full_name || 'seu motorista';
         const cleanPhone = phoneNumber.replace(/\D/g, '');
+
+        if (!driverId) {
+            alert('Erro: ID do motorista não encontrado. Faça login novamente.')
+            return
+        }
 
         setLoading(true)
         const { error } = await supabase.from('passengers').insert({
+            driver_id: driverId,
             full_name: fullName,
             phone_number: phoneNumber,
             is_favorite: isFavorite

@@ -35,7 +35,21 @@ const Passengers = () => {
 
     async function fetchPassengersAndBalances() {
         setLoading(true)
-        const { data: passengersData } = await supabase.from('passengers').select('*').order('full_name')
+
+        // Obter ID do motorista logado
+        const savedProfile = localStorage.getItem('driver_profile')
+        if (!savedProfile) {
+            setLoading(false)
+            return
+        }
+        const currentDriverId = JSON.parse(savedProfile).id
+
+        // Buscar apenas passageiros deste motorista
+        const { data: passengersData } = await supabase
+            .from('passengers')
+            .select('*')
+            .eq('driver_id', currentDriverId)
+            .order('full_name')
 
         if (passengersData) {
             setPassengers(passengersData)
