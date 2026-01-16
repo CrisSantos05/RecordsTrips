@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Phone, MapPin, Calendar, DollarSign, Clock, CheckCircle2, History as HistoryIcon } from 'lucide-react'
+import { ChevronLeft, User, Phone, MapPin, Calendar, DollarSign, Clock, CheckCircle2, History as HistoryIcon, Trash2 } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Passenger, Trip } from '../types'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -49,6 +49,32 @@ const PassengerDetails = () => {
         }
     }
 
+    const handleDeletePassenger = async () => {
+        if (!passenger || !id) return
+        if (!confirm('Tem certeza que deseja excluir este passageiro? Todas as viagens registradas também serão apagadas.')) return
+
+        setLoading(true)
+
+        // Delete trips first to ensure clean removal
+        const { error: tripsError } = await supabase.from('trips').delete().eq('passenger_id', id)
+
+        if (tripsError) {
+            alert('Erro ao excluir viagens: ' + tripsError.message)
+            setLoading(false)
+            return
+        }
+
+        // Delete passenger
+        const { error: passengerError } = await supabase.from('passengers').delete().eq('id', id)
+
+        if (passengerError) {
+            alert('Erro ao excluir passageiro: ' + passengerError.message)
+            setLoading(false)
+        } else {
+            navigate(-1)
+        }
+    }
+
     const totals = trips.reduce((acc, trip) => {
         if (trip.status === 'paid') acc.paid += Number(trip.amount)
         else acc.pending += Number(trip.amount)
@@ -64,7 +90,7 @@ const PassengerDetails = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Detalhes do Cliente</h1>
-                <div style={{ width: 40 }}></div>
+                <button onClick={handleDeletePassenger} style={{ color: 'var(--error)' }}><Trash2 size={20} /></button>
             </header>
 
             <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 25, background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', color: 'white', border: 'none' }}>
