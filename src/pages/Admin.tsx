@@ -121,14 +121,14 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
                 );
                 const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
 
-                // Usar link direto para evitar bloqueio de popup
-                const link = document.createElement('a');
-                link.href = whatsappUrl;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                // Tentar abrir WhatsApp direto
+                const win = window.open(whatsappUrl, '_blank');
+
+                // Fallback para bloqueadores de popup
+                if (!win) {
+                    alert('Pop-up bloqueado! Não foi possível abrir o WhatsApp automaticamente. Verifique as permissões do navegador.');
+                    console.log('WhatsApp Link:', whatsappUrl);
+                }
             }
 
             setDrivers([...drivers, data])
