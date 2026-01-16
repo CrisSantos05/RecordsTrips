@@ -23,74 +23,100 @@ const Login = ({ onLogin }: LoginProps) => {
 
         setLoading(true)
         setError('')
-        const { data, error: fetchError } = await supabase
-            .from('driver_profile')
-            .select('*')
-            .or(`phone_number.eq."${identifier}",email.eq."${identifier}"`)
-            .eq('password', password)
-            .single()
 
-        if (fetchError || !data) {
-            setError('Credenciais incorretas')
-        } else if (!data.is_active) {
-            setError('Seu acesso está desativado. Contate o administrador.')
-        } else {
-            // Tenta autenticação híbrida (migração transparente)
-            try {
-                // 1. Garante sessão no Auth
-                let { data: { session } } = await supabase.auth.getSession();
-                let authUser = session?.user;
+        let profileData: DriverProfile | null = null;
+        let authUser = null;
 
-                if (!authUser && data.email) {
-                    // Tenta Login no Supabase Auth
-                    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-                        email: data.email,
-                        password: password
-                    });
+        // ESTRATÉGIA MISTA:
+        // 1. Tentar Login via Auth (Se for Email) -> Garante acesso via RLS
+        const isEmail = identifier.includes('@');
 
-                    if (signInError) {
-                        // Se falhar login, tenta cadastrar (SignUp)
-                        console.log("Tentando cadastrar no Auth...", signInError.message);
-                        if (password && password.length >= 6) {
-                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                                email: data.email,
-                                password: password,
-                                options: {
-                                    data: {
-                                        full_name: data.full_name,
-                                    }
-                                }
-                            });
+        if (isEmail) {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: identifier,
+                password: password
+            });
 
-                            if (!signUpError && signUpData.user) {
-                                authUser = signUpData.user;
-                            }
-                        }
-                    } else if (authData.user) {
-                        authUser = authData.user;
-                    }
+            if (!authError && authData.session) {
+                authUser = authData.user;
+                // Busca perfil via ID Seguro (Auth ID)
+                const { data: profileByAuth } = await supabase
+                    .from('driver_profile')
+                    .select('*')
+                    .eq('auth_id', authUser.id)
+                    .single();
+
+                if (profileByAuth) {
+                    profileData = profileByAuth;
                 }
-
-                // 2. Se temos usuário autenticado, vincula ao perfil
-                if (authUser) {
-                    // Verifica se precisa atualizar (evita updates desnecessários se já tiver igual)
-                    if (data.auth_id !== authUser.id) {
-                        await supabase.from('driver_profile')
-                            .update({ auth_id: authUser.id })
-                            .eq('id', data.id);
-
-                        // Atualiza objeto local para refletir a mudança imediata
-                        data.auth_id = authUser.id;
-                    }
-                }
-
-            } catch (authErr) {
-                console.error("Erro na migração de Auth:", authErr);
-                // Não bloqueia o login legado
             }
-
-            onLogin(data)
         }
+
+        // 2. Se não logou via Auth (ou não é email), tenta método LEGADO (Banco de Dados direto)
+        if (!profileData) {
+            const { data: legacyData, error: legacyError } = await supabase
+                .from('driver_profile')
+                .select('*')
+                .or(`phone_number.eq."${identifier}",email.eq."${identifier}"`)
+                .eq('password', password)
+                .single();
+
+            if (!legacyError && legacyData) {
+                profileData = legacyData;
+
+                // Tentar migração silenciosa para Auth (se possível)
+                try {
+                    let { data: { session } } = await supabase.auth.getSession();
+                    let currentAuth = session?.user;
+
+                    // Se não tem sessão, tenta criar/logar no Auth para o futuro
+                    if (!currentAuth && profileData.email) {
+                        const { data: loginAttempt, error: loginErr } = await supabase.auth.signInWithPassword({
+                            email: profileData.email,
+                            password: password
+                        });
+
+                        if (loginErr) {
+                            // Se falhar login, tenta cadastrar (apenas se senha for forte)
+                            if (password.length >= 6) {
+                                const { data: signUpData } = await supabase.auth.signUp({
+                                    email: profileData.email,
+                                    password: password,
+                                    options: { data: { full_name: profileData.full_name } }
+                                });
+                                if (signUpData.user) currentAuth = signUpData.user;
+                            }
+                        } else {
+                            currentAuth = loginAttempt.user;
+                        }
+                    } else if (authUser) {
+                        currentAuth = authUser;
+                    }
+
+                    // Vincular ID se necessário
+                    if (currentAuth && profileData && (profileData as any).auth_id !== currentAuth.id) {
+                        await supabase.from('driver_profile')
+                            .update({ auth_id: currentAuth.id })
+                            .eq('id', profileData.id);
+                        (profileData as any).auth_id = currentAuth.id;
+                    }
+                } catch {
+                    // Falha silenciosa na migração não impede o login
+                }
+            }
+        }
+
+        // 3. Resultado Final
+        if (profileData) {
+            if (!profileData.is_active) {
+                setError('Seu acesso está desativado. Contate o administrador.')
+            } else {
+                onLogin(profileData)
+            }
+        } else {
+            setError('Credenciais incorretas')
+        }
+
         setLoading(false)
     }
 
