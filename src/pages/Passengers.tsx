@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { ChevronLeft, User, Search, Plus, Phone, History } from 'lucide-react'
 import { supabase } from '../supabaseClient'
-import { Passenger, Trip } from '../types'
+import { Passenger, Trip, DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
 
 const Passengers = () => {
@@ -9,11 +9,29 @@ const Passengers = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [loading, setLoading] = useState(true)
     const [passengerBalances, setPassengerBalances] = useState<{ [key: string]: { paid: number, pending: number } }>({})
+    const [driverProfile, setDriverProfile] = useState<DriverProfile | null>(null)
     const navigate = useNavigate()
 
     useEffect(() => {
         fetchPassengersAndBalances()
+        fetchDriverProfile()
     }, [])
+
+    async function fetchDriverProfile() {
+        const savedProfile = localStorage.getItem('driver_profile')
+        if (!savedProfile) return
+
+        const currentUser = JSON.parse(savedProfile)
+        if (!currentUser.id) return
+
+        const { data } = await supabase
+            .from('driver_profile')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single()
+
+        if (data) setDriverProfile(data)
+    }
 
     async function fetchPassengersAndBalances() {
         setLoading(true)
@@ -79,26 +97,55 @@ const Passengers = () => {
                             <div
                                 key={p.id}
                                 className="card"
-                                style={{ display: 'flex', alignItems: 'center', gap: 15, cursor: 'pointer', padding: '15px' }}
-                                onClick={() => navigate(`/passenger/${p.id}`)}
+                                style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 15, padding: '15px' }}
                             >
-                                <div className="avatar" style={{ margin: 0, width: 45, height: 45 }}>
-                                    {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} /> : <User />}
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{p.full_name}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                        <Phone size={12} /> {p.phone_number}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 15, cursor: 'pointer' }} onClick={() => navigate(`/passenger/${p.id}`)}>
+                                    <div className="avatar" style={{ margin: 0, width: 45, height: 45 }}>
+                                        {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} /> : <User />}
                                     </div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--success)' }}>R$ {bal.paid.toFixed(2)}</div>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: bal.pending > 0 ? 'var(--error)' : '#999' }}>
-                                        R$ {bal.pending.toFixed(2)}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{p.full_name}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                            <Phone size={12} /> {p.phone_number}
+                                        </div>
                                     </div>
-                                    <div style={{ fontSize: '0.6rem', color: '#999', marginTop: 2 }}>Pendente</div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--success)' }}>R$ {bal.paid.toFixed(2)}</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: bal.pending > 0 ? 'var(--error)' : '#999' }}>
+                                            R$ {bal.pending.toFixed(2)}
+                                        </div>
+                                        <div style={{ fontSize: '0.6rem', color: '#999', marginTop: 2 }}>Pendente</div>
+                                    </div>
+                                    <ChevronLeft size={20} style={{ transform: 'rotate(180deg)', color: '#ccc' }} />
                                 </div>
-                                <ChevronLeft size={20} style={{ transform: 'rotate(180deg)', color: '#ccc' }} />
+
+                                {bal.pending > 0 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const pixKey = driverProfile?.pix_key || 'não cadastrada';
+                                            const message = encodeURIComponent(`Olá ${p.full_name}, aqui é o seu motorista. Passando para lembrar das nossas viagens que somam R$ ${bal.pending.toFixed(2)}. Segue o PIX para pagamento: ${pixKey}`);
+                                            window.open(`https://wa.me/${p.phone_number?.replace(/\D/g, '')}?text=${message}`, '_blank');
+                                        }}
+                                        style={{
+                                            fontSize: '0.8rem',
+                                            padding: '10px 15px',
+                                            backgroundColor: '#E8F5E9',
+                                            color: '#2E7D32',
+                                            borderRadius: 8,
+                                            fontWeight: 700,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 6,
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            width: '100%'
+                                        }}
+                                    >
+                                        <Phone size={14} /> COBRAR R$ {bal.pending.toFixed(2)}
+                                    </button>
+                                )}
                             </div>
                         )
                     })}

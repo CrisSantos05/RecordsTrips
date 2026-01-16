@@ -36,4 +36,5 @@ export interface DriverProfile {
     is_admin: boolean;
     password?: string;
     email?: string;
+    pix_key?: string;
 }

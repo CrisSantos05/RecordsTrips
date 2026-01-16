@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Search, Phone } from 'lucide-react'
+import { ChevronLeft, User, Search } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Trip } from '../types'
 import { format } from 'date-fns'
@@ -9,26 +9,20 @@ import { Link, useNavigate } from 'react-router-dom'
 
 const HistoryPage = () => {
     const [trips, setTrips] = useState<Trip[]>([])
-    const [filter, setFilter] = useState<'all' | 'paid' | 'pending'>('all')
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
     useEffect(() => {
         fetchTrips()
-    }, [filter])
+    }, [])
 
     async function fetchTrips() {
         setLoading(true)
-        let query = supabase
+        const { data } = await supabase
             .from('trips')
             .select('*, passenger:passengers(*)')
             .order('trip_date', { ascending: false })
 
-        if (filter !== 'all') {
-            query = query.eq('status', filter)
-        }
-
-        const { data } = await query
         if (data) setTrips(data)
         setLoading(false)
     }
@@ -75,11 +69,6 @@ const HistoryPage = () => {
                 </div>
             </div>
 
-            <div className="tabs">
-                <button className={`tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Todas</button>
-                <button className={`tab ${filter === 'paid' ? 'active' : ''}`} onClick={() => setFilter('paid')}>Pagas</button>
-                <button className={`tab ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>Pendentes</button>
-            </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' }}>
                 <h2 style={{ fontSize: '1.2rem' }}>Atividade Recente</h2>
@@ -155,30 +144,6 @@ const HistoryPage = () => {
                                         <div style={{ fontWeight: 700, fontSize: '1.1rem', color: group.hasPending ? 'var(--error)' : 'inherit' }}>
                                             R$ {group.totalAmount.toFixed(2)}
                                         </div>
-                                        {group.hasPending && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const message = encodeURIComponent(`Olá ${group.passenger?.full_name}, aqui é o seu motorista. Passando para lembrar das nossas viagens que somam R$ ${group.totalAmount.toFixed(2)}. Segue o PIX para pagamento: [SUA CHAVE AQUI]`);
-                                                    window.open(`https://wa.me/${group.passenger?.phone_number?.replace(/\D/g, '')}?text=${message}`, '_blank');
-                                                }}
-                                                style={{
-                                                    fontSize: '0.7rem',
-                                                    padding: '5px 10px',
-                                                    backgroundColor: '#E8F5E9',
-                                                    color: '#2E7D32',
-                                                    borderRadius: 8,
-                                                    fontWeight: 700,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
-                                                    border: 'none',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <Phone size={12} /> COBRAR
-                                            </button>
-                                        )}
                                     </div>
                                 </div>
                             </div>

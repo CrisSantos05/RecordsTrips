@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert, LogOut, HelpCircle } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, ShieldAlert, LogOut, HelpCircle, QrCode } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
@@ -28,7 +28,8 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
             report_logo_url: profile.report_logo_url,
             signature_url: profile.signature_url,
             car_document_url: profile.car_document_url,
-            cnh_url: profile.cnh_url
+            cnh_url: profile.cnh_url,
+            pix_key: profile.pix_key
         }).eq('id', profile.id)
 
         if (error) alert(error.message)
@@ -195,6 +196,19 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
                     <input value={profile.phone_number} onChange={e => setProfile({ ...profile, phone_number: e.target.value })} />
                     <Phone className="icon" size={20} />
                 </div>
+            </div>
+
+            <div className="input-group">
+                <label>CHAVE PIX (PARA COBRANÇA)</label>
+                <div className="input-wrapper">
+                    <input
+                        placeholder="CPF, E-mail ou Celular"
+                        value={profile.pix_key || ''}
+                        onChange={e => setProfile({ ...profile, pix_key: e.target.value })}
+                    />
+                    <QrCode className="icon" size={20} />
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#666', marginTop: 5 }}>Essa chave será enviada automaticamente nas mensagens de cobrança.</div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 20 }}>
