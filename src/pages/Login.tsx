@@ -35,6 +35,60 @@ const Login = ({ onLogin }: LoginProps) => {
         } else if (!data.is_active) {
             setError('Seu acesso está desativado. Contate o administrador.')
         } else {
+            // Tenta autenticação híbrida (migração transparente)
+            try {
+                // 1. Garante sessão no Auth
+                let { data: { session } } = await supabase.auth.getSession();
+                let authUser = session?.user;
+
+                if (!authUser && data.email) {
+                    // Tenta Login no Supabase Auth
+                    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+                        email: data.email,
+                        password: password
+                    });
+
+                    if (signInError) {
+                        // Se falhar login, tenta cadastrar (SignUp)
+                        console.log("Tentando cadastrar no Auth...", signInError.message);
+                        if (password && password.length >= 6) {
+                            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                                email: data.email,
+                                password: password,
+                                options: {
+                                    data: {
+                                        full_name: data.full_name,
+                                    }
+                                }
+                            });
+
+                            if (!signUpError && signUpData.user) {
+                                authUser = signUpData.user;
+                            }
+                        }
+                    } else if (authData.user) {
+                        authUser = authData.user;
+                    }
+                }
+
+                // 2. Se temos usuário autenticado, vincula ao perfil
+                if (authUser) {
+                    // Verifica se precisa atualizar (evita updates desnecessários se já tiver igual)
+                    if (data.auth_id !== authUser.id) {
+                        await supabase.from('driver_profile')
+                            .update({ auth_id: authUser.id })
+                            .eq('id', data.id);
+
+                        // Atualiza objeto local para refletir a mudança imediata
+                        data.auth_id = authUser.id;
+                    }
+                }
+
+            } catch (authErr) {
+                console.error("Erro na migração de Auth:", authErr);
+                // Não bloqueia o login legado
+            }
+
             onLogin(data)
         }
         setLoading(false)

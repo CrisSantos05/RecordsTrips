@@ -29,11 +29,27 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
 
     async function checkAdminAccess() {
         // Fetch current profile to check admin status
-        const { data } = await supabase.from('driver_profile').select('is_admin').limit(1).single()
+        const { data: { user } } = await supabase.auth.getUser();
+        let query = supabase.from('driver_profile').select('is_admin');
+
+        if (user) {
+            query = query.eq('auth_id', user.id);
+        } else {
+            // Fallback for legacy or lost session (using localStorage if available)
+            const savedProfile = localStorage.getItem('driver_profile');
+            if (savedProfile) {
+                const parsed = JSON.parse(savedProfile);
+                if (parsed.id) query = query.eq('id', parsed.id);
+            }
+        }
+
+        const { data, error } = await query.maybeSingle(); // Use maybeSingle to avoid 406 if multiple rows match (shouldn't happen with ID)
+
         if (data && data.is_admin) {
             setIsAdmin(true)
             fetchDrivers()
         } else {
+            console.warn("Acesso negado ou perfil não encontrado", error);
             setIsAdmin(false)
             setTimeout(() => navigate('/'), 2000)
         }
