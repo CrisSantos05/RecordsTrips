@@ -207,7 +207,7 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
                                 {balances[driver.id] > 0 && (
                                     <button
                                         onClick={() => {
-                                            const message = encodeURIComponent(`Olá ${driver.full_name}, aqui é a administração do RecordsTrip. Consta em nosso sistema um valor pendente de acerto de R$ ${balances[driver.id].toFixed(2)}. Por favor, verifique seus registros.`);
+                                            const message = encodeURIComponent(`Olá ${driver.full_name}, aqui é a administração do RecordsTrip. Consta em nosso sistema um valor pendente de pagamento de R$ ${balances[driver.id].toFixed(2)}. Por favor, verifique seus registros.`);
                                             window.open(`https://wa.me/${driver.phone_number?.replace(/\D/g, '')}?text=${message}`, '_blank');
                                         }}
                                         style={{

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
-import { Car, History, BarChart3, Settings, LogOut } from 'lucide-react'
+import { Car, History, BarChart3, Settings, LogOut, Users } from 'lucide-react'
 import { supabase } from './supabaseClient'
 import { DriverProfile } from './types'
 import Drive from './pages/Drive'
@@ -8,6 +8,8 @@ import HistoryPage from './pages/History'
 import Earnings from './pages/Earnings'
 import Profile from './pages/Profile'
 import RegisterPassenger from './pages/RegisterPassenger'
+import Passengers from './pages/Passengers'
+import PassengerDetails from './pages/PassengerDetails'
 import Admin from './pages/Admin'
 import Blocked from './pages/Blocked'
 import Login from './pages/Login'
@@ -19,13 +21,18 @@ const BottomNav = () => {
 
     // Don't show bottom nav on certain pages
     const hiddenPages = ['/admin', '/register-passenger', '/login'];
-    if (hiddenPages.includes(location.pathname)) return null;
+    const isDetailPath = location.pathname.startsWith('/passenger/');
+    if (hiddenPages.includes(location.pathname) || isDetailPath) return null;
 
     return (
         <div className="bottom-nav">
             <Link to="/" className={`nav-item ${isActive('/') ? 'active' : ''}`}>
                 <Car />
                 <span>VIAGEM</span>
+            </Link>
+            <Link to="/passengers" className={`nav-item ${isActive('/passengers') ? 'active' : ''}`}>
+                <Users />
+                <span>CLIENTES</span>
             </Link>
             <Link to="/history" className={`nav-item ${isActive('/history') ? 'active' : ''}`}>
                 <History />
@@ -100,6 +107,8 @@ function App() {
                     <Route path="/earnings" element={<Earnings />} />
                     <Route path="/profile" element={<Profile currentProfile={profile} onLogout={handleLogout} />} />
                     <Route path="/register-passenger" element={<RegisterPassenger />} />
+                    <Route path="/passengers" element={<Passengers />} />
+                    <Route path="/passenger/:id" element={<PassengerDetails />} />
                     <Route path="/admin" element={<Admin onLogout={handleLogout} />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

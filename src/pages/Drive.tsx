@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, HelpCircle, User, Calendar as CalendarIcon, DollarSign, CheckCircle2, Clock, Save, Plus } from 'lucide-react'
+import { ChevronLeft, HelpCircle, User, Calendar as CalendarIcon, DollarSign, CheckCircle2, Clock, Save, Plus, History as HistoryIcon } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Passenger } from '../types'
 import { Link, useNavigate } from 'react-router-dom'
@@ -181,9 +181,16 @@ const Drive = () => {
             {selectedPassenger ? `${selectedPassenger.passenger_class}` : 'Selecione para registrar'}
           </div>
         </div>
-        <Link to="/register-passenger" style={{ color: 'var(--primary)' }}>
-          <Plus />
-        </Link>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {selectedPassenger && (
+            <Link to={`/passenger/${selectedPassenger.id}`} style={{ color: '#666' }}>
+              <HistoryIcon size={24} />
+            </Link>
+          )}
+          <Link to="/register-passenger" style={{ color: 'var(--primary)' }}>
+            <Plus size={24} />
+          </Link>
+        </div>
       </div>
 
       {pendingBalance > 0 && (
