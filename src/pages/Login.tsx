@@ -70,7 +70,7 @@ const Login = ({ onLogin }: LoginProps) => {
                     let currentAuth = session?.user;
 
                     // Se não tem sessão, tenta criar/logar no Auth para o futuro
-                    if (!currentAuth && profileData.email) {
+                    if (!currentAuth && profileData && profileData.email) {
                         const { data: loginAttempt, error: loginErr } = await supabase.auth.signInWithPassword({
                             email: profileData.email,
                             password: password
