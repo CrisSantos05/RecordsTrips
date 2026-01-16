@@ -16,6 +16,11 @@ const RegisterPassenger = () => {
             return
         }
 
+        // Preparar dados do WhatsApp ANTES da operação assíncrona
+        const savedProfile = localStorage.getItem('driver_profile');
+        const driverName = savedProfile ? JSON.parse(savedProfile).full_name : 'seu motorista';
+        const cleanPhone = phoneNumber.replace(/\D/g, '');
+
         setLoading(true)
         const { error } = await supabase.from('passengers').insert({
             full_name: fullName,
@@ -25,24 +30,32 @@ const RegisterPassenger = () => {
 
         if (error) {
             alert('Erro: ' + error.message)
-        } else {
-            // Get driver info for the message
-            const savedProfile = localStorage.getItem('driver_profile');
-            const driverName = savedProfile ? JSON.parse(savedProfile).full_name : 'seu motorista';
-
-            alert('Passageiro cadastrado!')
-
-            // Send welcome WhatsApp
-            if (phoneNumber) {
-                const message = encodeURIComponent(
-                    `Seja bem vindo ao aplicativo RecordsTrip! 🚗\n\nSou ${driverName} e acabei de registrar seu contato para facilitar nossas próximas viagens.`
-                );
-                window.open(`https://wa.me/${phoneNumber.replace(/\D/g, '')}?text=${message}`, '_blank');
-            }
-
-            navigate(-1)
+            setLoading(false)
+            return
         }
+
+        // Passageiro cadastrado com sucesso
+        alert('Passageiro cadastrado!')
+
+        // Enviar WhatsApp de boas-vindas
+        if (cleanPhone) {
+            const message = encodeURIComponent(
+                `Seja bem vindo ao aplicativo RecordsTrip! 🚗\n\nSou ${driverName} e acabei de registrar seu contato para facilitar nossas próximas viagens.`
+            );
+            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+
+            // Usar link direto para evitar bloqueio de popup
+            const link = document.createElement('a');
+            link.href = whatsappUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         setLoading(false)
+        navigate(-1)
     }
 
     return (

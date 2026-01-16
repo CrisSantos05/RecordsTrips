@@ -79,7 +79,9 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
             return
         }
 
+        // Preparar dados ANTES da operação assíncrona
         const generatedPassword = newDriver.password || Math.random().toString(36).slice(-6);
+        const cleanPhone = newDriver.phone_number?.replace(/\D/g, '') || '';
 
         setLoading(true)
         const { data, error } = await supabase.from('driver_profile').insert({
@@ -91,13 +93,26 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
 
         if (error) {
             alert('Erro ao adicionar motorista: ' + error.message)
-        } else if (data) {
-            // Send WhatsApp notification
-            if (data.phone_number) {
+            setLoading(false)
+            return
+        }
+
+        if (data) {
+            // Enviar notificação WhatsApp
+            if (cleanPhone) {
                 const message = encodeURIComponent(
                     `*RecordsTrip - Acesso Liberado!*\n\nOlá ${data.full_name}, seu acesso ao aplicativo foi criado.\n\n*Seus dados de login:*\n📧 E-mail: ${data.email}\n🔑 Senha: ${generatedPassword}\n\nAcesse agora: ${window.location.origin}`
                 );
-                window.open(`https://wa.me/${data.phone_number.replace(/\D/g, '')}?text=${message}`, '_blank');
+                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+
+                // Usar link direto para evitar bloqueio de popup
+                const link = document.createElement('a');
+                link.href = whatsappUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
 
             setDrivers([...drivers, data])
