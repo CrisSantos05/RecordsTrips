@@ -13,6 +13,7 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
     const [showAddModal, setShowAddModal] = useState(false)
+    const [createdDriver, setCreatedDriver] = useState<DriverProfile | null>(null)
     const [newDriver, setNewDriver] = useState({
         full_name: '',
         phone_number: '',
@@ -95,18 +96,7 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
             return
         }
 
-        // Preparar dados ANTES da operação assíncrona
         const generatedPassword = newDriver.password || Math.random().toString(36).slice(-6);
-        const cleanPhone = newDriver.phone_number?.replace(/\D/g, '') || '';
-
-        // TÉCNICA "OPEN EARLY": Abrir a janela ANTES do await para evitar bloqueio em mobile
-        let whatsappWindow: Window | null = null;
-        if (cleanPhone) {
-            whatsappWindow = window.open('', '_blank');
-            if (whatsappWindow) {
-                whatsappWindow.document.write('<html><body style="background:#25D366; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;"><h3>Gerando link do WhatsApp...</h3></body></html>');
-            }
-        }
 
         setLoading(true)
         const { data, error } = await supabase.from('driver_profile').insert({
@@ -117,29 +107,15 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
         }).select().single()
 
         if (error) {
-            if (whatsappWindow) whatsappWindow.close(); // Fechar janela se der erro
             alert('Erro ao adicionar motorista: ' + error.message)
             setLoading(false)
             return
         }
 
         if (data) {
-            // Enviar notificação WhatsApp
-            if (cleanPhone && whatsappWindow) {
-                const message = encodeURIComponent(
-                    `*RecordsTrip - Acesso Liberado!*\n\nOlá ${data.full_name}, seu acesso ao aplicativo foi criado.\n\n*Seus dados de login:*\n📧 E-mail: ${data.email}\n🔑 Senha: ${generatedPassword}\n\nAcesse agora: ${window.location.origin}`
-                );
-                const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
-
-                // Atualizar a URL da janela já aberta
-                whatsappWindow.location.href = whatsappUrl;
-            } else if (cleanPhone && !whatsappWindow) {
-                // Fallback caso a janela não tenha aberto no inicio
-                alert('Motorista salvo! Porém o pop-up do WhatsApp foi bloqueado pelo navegador. Verifique as permissões.');
-            }
-
             setDrivers([...drivers, data])
             setShowAddModal(false)
+            setCreatedDriver({ ...data, password: generatedPassword }) // Store password temporarily for the message
             setNewDriver({
                 full_name: '',
                 phone_number: '',
@@ -150,6 +126,16 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
             })
         }
         setLoading(false)
+    }
+
+    const sendWhatsApp = (driver: DriverProfile & { password?: string }) => {
+        const cleanPhone = driver.phone_number?.replace(/\D/g, '') || '';
+        if (!cleanPhone) return alert('Motorista sem telefone cadastrado.');
+
+        const message = encodeURIComponent(
+            `*RecordsTrip - Acesso Liberado!*\n\nOlá ${driver.full_name}, seu acesso ao aplicativo foi criado.\n\n*Seus dados de login:*\n📧 E-mail: ${driver.email}\n🔑 Senha: ${driver.password}\n\nAcesse agora: ${window.location.origin}`
+        );
+        window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     }
 
     async function handleDeleteDriver(id: string) {
@@ -288,7 +274,7 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
                     <div className="card" style={{ width: '100%', maxWidth: 400, margin: 0, position: 'relative' }}>
                         <button onClick={() => setShowAddModal(false)} style={{ position: 'absolute', top: 15, right: 15, color: '#999' }}><X /></button>
                         <h3 style={{ marginBottom: 20 }}>Novo Motorista</h3>
-
+                        {/* ... (rest of the add modal inputs, unchanged) ... */}
                         <div className="input-group">
                             <label>Nome Completo</label>
                             <div className="input-wrapper">
@@ -347,6 +333,46 @@ const Admin = ({ onLogout }: { onLogout: () => void }) => {
                         <button className="btn-primary" onClick={handleAddDriver} disabled={loading} style={{ marginTop: 10 }}>
                             <Save size={18} /> Salvar Motorista
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Sucesso com Botão Manual para WhatsApp */}
+            {createdDriver && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                    <div className="card" style={{ width: '100%', maxWidth: 350, margin: 0, textAlign: 'center', padding: '30px 20px' }}>
+                        <div style={{ width: 60, height: 60, background: '#D1FAE5', borderRadius: '50%', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                            <ShieldCheck size={32} />
+                        </div>
+                        <h3 style={{ color: '#10B981', marginBottom: 10 }}>Motorista Criado!</h3>
+                        <p style={{ color: '#666', marginBottom: 25, fontSize: '0.9rem' }}>
+                            O motorista <strong>{createdDriver.full_name}</strong> foi cadastrado com sucesso.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <button
+                                onClick={() => sendWhatsApp(createdDriver)}
+                                style={{
+                                    background: '#25D366', color: 'white', border: 'none',
+                                    padding: '12px', borderRadius: 12, fontWeight: 'bold',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                    fontSize: '1rem', cursor: 'pointer'
+                                }}
+                            >
+                                <Phone size={20} /> Enviar WhatsApp
+                            </button>
+
+                            <button
+                                onClick={() => setCreatedDriver(null)}
+                                style={{
+                                    background: 'transparent', color: '#666', border: '1px solid #ddd',
+                                    padding: '12px', borderRadius: 12, fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Fechar
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
