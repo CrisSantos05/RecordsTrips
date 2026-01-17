@@ -234,10 +234,8 @@ const Drive = () => {
       <div className="input-group">
         <label>DATA DA VIAGEM</label>
         <div className="card" style={{ padding: '15px', marginBottom: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600 }}>
-            <ChevronLeft size={20} color="var(--primary)" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
             <span>{format(new Date(), 'MMMM yyyy', { locale: ptBR })}</span>
-            <ChevronLeft size={20} color="var(--primary)" style={{ transform: 'rotate(180deg)' }} />
           </div>
           <div style={{ marginTop: '15px', textAlign: 'center' }}>
             <div style={{ display: 'inline-block', background: 'var(--primary)', color: 'white', width: '40px', height: '40px', lineHeight: '40px', borderRadius: '50%', fontWeight: 700 }}>
