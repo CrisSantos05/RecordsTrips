@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ChevronLeft, HelpCircle, User, Calendar as CalendarIcon, DollarSign, CheckCircle2, Clock, Save, Plus, History as HistoryIcon } from 'lucide-react'
+import HelpModal from '../components/HelpModal'
 import { supabase } from '../supabaseClient'
 import { Passenger } from '../types'
 import { Link, useNavigate } from 'react-router-dom'
@@ -111,31 +112,18 @@ const Drive = () => {
         <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
       </header>
 
-      {showHelp && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
-        }}>
-          <div className="card" style={{ maxWidth: 400, width: '100%', position: 'relative', padding: '30px 20px' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: 15, color: 'var(--primary)', textAlign: 'center' }}>Como usar esta página</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', lineHeight: '1.4' }}>
-              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>1.</span> Selecione o passageiro na lista ou use a "Seleção Rápida" no topo.</div>
-              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>2.</span> Se o passageiro tiver dívidas pendentes, um card laranja aparecerá para você "Quitar Tudo" se desejar.</div>
-              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>3.</span> Digite o valor dos ganhos desta viagem.</div>
-              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>4.</span> Escolha se a viagem foi Paga agora ou se ficará Pendente.</div>
-              <div style={{ display: 'flex', gap: 10 }}><span style={{ color: 'var(--primary)', fontWeight: 700 }}>5.</span> Clique em "Salvar Viagem" para registrar permanentemente.</div>
-            </div>
-            <button
-              className="btn-primary"
-              style={{ marginTop: 25 }}
-              onClick={() => setShowHelp(false)}
-            >
-              Entendi!
-            </button>
-          </div>
-        </div>
-      )}
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Como usar esta página"
+        steps={[
+          "Selecione o passageiro na lista ou use a \"Seleção Rápida\" no topo.",
+          "Se o passageiro tiver dívidas pendentes, um card laranja aparecerá para você \"Quitar Tudo\" se desejar.",
+          "Digite o valor dos ganhos desta viagem.",
+          "Escolha se a viagem foi Paga agora ou se ficará Pendente.",
+          "Clique em \"Salvar Viagem\" para registrar permanentemente."
+        ]}
+      />
 
       <div style={{ marginBottom: 20 }}>
         <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, display: 'block' }}>SELEÇÃO RÁPIDA (RECENTES)</label>

@@ -3,6 +3,7 @@ import { ChevronLeft, CheckCircle2, User, Phone, Car, Save, Camera, FileText, Sh
 import { supabase } from '../supabaseClient'
 import { DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
+import HelpModal from '../components/HelpModal'
 
 interface ProfileProps {
     currentProfile: DriverProfile;
@@ -92,29 +93,17 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
                 <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
             </header>
 
-            {showHelp && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
-                }}>
-                    <div className="card" style={{ maxWidth: 400, width: '100%', position: 'relative', padding: '30px 20px' }}>
-                        <h2 style={{ fontSize: '1.4rem', marginBottom: 15, color: '#1E88E5', textAlign: 'center' }}>Ajuda do Perfil</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '0.9rem', lineHeight: '1.4' }}>
-                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Foto:</span> Sua foto de identificação (Opcional).</div>
-                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Documentos:</span> Carregue a foto da sua **CNH** e do **Documento do Carro** nos campos pontilhados.</div>
-                            <div style={{ display: 'flex', gap: 10 }}><span style={{ color: '#1E88E5', fontWeight: 700 }}>Dados:</span> Mantenha placa e modelo do veículo sempre atualizados.</div>
-                        </div>
-                        <button
-                            className="btn-primary"
-                            style={{ marginTop: 25, backgroundColor: '#1E88E5' }}
-                            onClick={() => setShowHelp(false)}
-                        >
-                            Entendi!
-                        </button>
-                    </div>
-                </div>
-            )}
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Ajuda do Perfil"
+                steps={[
+                    "Mantenha seus dados sempre atualizados para passar credibilidade.",
+                    "Cadastre sua Chave PIX: ela será enviada automaticamente nas mensagens de cobrança para seus passageiros.",
+                    "Carregue fotos dos documentos (CNH e Doc. Veículo) para ter fácil acesso quando precisar.",
+                    "Você pode ativar ou desativar a exibição da placa do carro e da assinatura nos relatórios gerados."
+                ]}
+            />
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '30px 0' }}>
                 <div style={{ position: 'relative' }}>

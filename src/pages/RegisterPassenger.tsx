@@ -2,12 +2,14 @@ import React, { useState } from 'react'
 import { ChevronLeft, User, Phone, Save, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
+import HelpModal from '../components/HelpModal'
 
 const RegisterPassenger = () => {
     const [fullName, setFullName] = useState('')
     const [phoneNumber, setPhoneNumber] = useState('')
     const [isFavorite, setIsFavorite] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     const handleSave = async () => {
@@ -89,8 +91,20 @@ const RegisterPassenger = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Cadastrar Passageiro</h1>
-                <button><HelpCircle /></button>
+                <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
             </header>
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Cadastrar Novo Passageiro"
+                steps={[
+                    "Formulário para adicionar novos clientes à sua carteira.",
+                    "O 'Nome Completo' é o único campo obrigatório.",
+                    "Se preencher o 'Telefone', o app tentará abrir o WhatsApp automaticamente após salvar para enviar uma mensagem de boas-vindas.",
+                    "Marcar como 'Favorito' (em breve) facilitará encontrar este passageiro no topo da lista."
+                ]}
+            />
 
             <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: 20 }}>Novo Passageiro</h2>
             <p style={{ color: '#757575', fontSize: '0.9rem', marginBottom: 30 }}>Adicione detalhes para acompanhar ganhos e capacidade.</p>

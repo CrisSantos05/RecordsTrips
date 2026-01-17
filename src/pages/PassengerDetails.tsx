@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Phone, MapPin, Calendar, DollarSign, Clock, CheckCircle2, History as HistoryIcon, Trash2 } from 'lucide-react'
+import { ChevronLeft, User, Phone, MapPin, Calendar, DollarSign, Clock, CheckCircle2, History as HistoryIcon, Trash2, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Passenger, Trip } from '../types'
 import { useNavigate, useParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import HelpModal from '../components/HelpModal'
 
 const PassengerDetails = () => {
     const { id } = useParams()
     const [passenger, setPassenger] = useState<Passenger | null>(null)
     const [trips, setTrips] = useState<Trip[]>([])
     const [loading, setLoading] = useState(true)
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -90,8 +92,24 @@ const PassengerDetails = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Detalhes do Cliente</h1>
-                <button onClick={handleDeletePassenger} style={{ color: 'var(--error)' }}><Trash2 size={20} /></button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
+                    <button onClick={handleDeletePassenger} style={{ color: 'var(--error)' }}><Trash2 size={20} /></button>
+                </div>
             </header>
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Detalhes do Cliente"
+                steps={[
+                    "Esta página mostra o perfil completo e o histórico de um passageiro específico.",
+                    "No topo, em 'Pendente', você vê o total exato que este passageiro lhe deve.",
+                    "Abaixo, está a lista de todas as viagens feitas por ele.",
+                    "Você pode tocar no botão de status ('PAGO' ou 'PENDENTE') de cada viagem para alterá-lo instantaneamente se necessário.",
+                    "CUIDADO: O ícone de lixeira no topo exclui permanentemente o passageiro e todo o seu histórico de viagens."
+                ]}
+            />
 
             <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 25, background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)', color: 'white', border: 'none' }}>
                 <div className="avatar" style={{ width: 70, height: 70, border: '3px solid rgba(255,255,255,0.3)', margin: 0 }}>
@@ -132,7 +150,7 @@ const PassengerDetails = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#666', fontSize: '0.8rem', fontWeight: 600, marginBottom: 5 }}>
-                                        <Calendar size={14} /> {format(new Date(trip.trip_date), "dd 'de' MMMM", { locale: ptBR })}
+                                        <Calendar size={14} /> {format(trip.trip_date.includes('T') ? new Date(trip.trip_date) : new Date(trip.trip_date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
                                     </div>
                                     <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>R$ {Number(trip.amount).toFixed(2)}</div>
                                     {trip.notes && <div style={{ fontSize: '0.75rem', color: '#888', marginTop: 5 }}>"{trip.notes}"</div>}

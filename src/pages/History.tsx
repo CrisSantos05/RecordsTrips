@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Search } from 'lucide-react'
+import { ChevronLeft, User, Search, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Trip } from '../types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import HelpModal from '../components/HelpModal'
 
 import { Link, useNavigate } from 'react-router-dom'
 
 const HistoryPage = () => {
     const [trips, setTrips] = useState<Trip[]>([])
     const [loading, setLoading] = useState(true)
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -53,8 +55,20 @@ const HistoryPage = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Histórico de Viagens</h1>
-                <button><div className="avatar" style={{ width: 32, height: 32, margin: 0 }}><User size={16} /></div></button>
+                <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
             </header>
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Histórico de Viagens"
+                steps={[
+                    "Acompanhe aqui todas as viagens realizadas por seus passageiros.",
+                    "O painel superior mostra o resumo financeiro: quanto já foi 'Pago' e quanto está 'Pendente'.",
+                    "Toque em qualquer viagem da lista para ver os detalhes completos daquele passageiro.",
+                    "Os ícones coloridos (verde/vermelho) indicam rapidamente o status de pagamento de cada grupo de viagens."
+                ]}
+            />
 
             <div className="summary-grid">
                 <div className="summary-card paid">
@@ -128,7 +142,7 @@ const HistoryPage = () => {
                                         {group.passenger?.full_name || 'Desconhecido'}
                                     </div>
                                     <div className="meta">
-                                        <span>{format(new Date(group.latestDate), 'MMM d', { locale: ptBR })}</span>
+                                        <span>{format(group.latestDate.includes('T') ? new Date(group.latestDate) : new Date(group.latestDate + 'T00:00:00'), 'MMM d', { locale: ptBR })}</span>
                                         <span>•</span>
                                         <span>{format(new Date(group.latestCreatedAt), 'HH:mm', { locale: ptBR })}</span>
                                     </div>

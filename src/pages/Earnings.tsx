@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, BarChart3, TrendingUp, DollarSign } from 'lucide-react'
+import { ChevronLeft, BarChart3, TrendingUp, DollarSign, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
+import HelpModal from '../components/HelpModal'
 
 const Earnings = () => {
     const [stats, setStats] = useState({ total: 0, paid: 0, pending: 0, count: 0 })
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -35,8 +37,21 @@ const Earnings = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Ganhos</h1>
-                <button><BarChart3 /></button>
+                <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
             </header>
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Relatório de Ganhos"
+                steps={[
+                    "Visualize o desempenho financeiro do seu negócio.",
+                    "O card principal (azul) mostra a receita total gerada até o momento.",
+                    "Logo abaixo, veja separadamente o que já foi 'Coletado' (dinheiro no bolso) e o que está 'Pendente'.",
+                    "O gráfico de barras ajuda a comparar seu rendimento dia a dia na semana atual.",
+                    "No final da página, veja a média de valor por viagem para entender melhor sua rentabilidade."
+                ]}
+            />
 
             <div className="card" style={{ background: 'var(--primary)', color: 'white', textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: 10 }}>RECEITA TOTAL</div>

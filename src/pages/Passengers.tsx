@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, User, Search, Plus, Phone, History } from 'lucide-react'
+import { ChevronLeft, User, Search, Plus, Phone, History, HelpCircle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { Passenger, Trip, DriverProfile } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
+import HelpModal from '../components/HelpModal'
 
 const Passengers = () => {
     const [passengers, setPassengers] = useState<Passenger[]>([])
@@ -10,6 +11,7 @@ const Passengers = () => {
     const [loading, setLoading] = useState(true)
     const [passengerBalances, setPassengerBalances] = useState<{ [key: string]: { paid: number, pending: number } }>({})
     const [driverProfile, setDriverProfile] = useState<DriverProfile | null>(null)
+    const [showHelp, setShowHelp] = useState(false)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -83,10 +85,26 @@ const Passengers = () => {
             <header style={{ margin: '-20px -20px 20px -20px' }}>
                 <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
                 <h1>Passageiros</h1>
-                <Link to="/register-passenger" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center' }}>
-                    <Plus size={24} />
-                </Link>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
+                    <Link to="/register-passenger" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center' }}>
+                        <Plus size={24} />
+                    </Link>
+                </div>
             </header>
+
+            <HelpModal
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title="Lista de Passageiros"
+                steps={[
+                    "Aqui ficam todos os seus passageiros cadastrados.",
+                    "Use a barra de busca para encontrar alguém rapidamente pelo nome ou telefone.",
+                    "Cada cartão mostra o saldo 'Pago' (verde) e 'Pendente' (vermelho) daquele passageiro.",
+                    "Se houver pendências, um botão 'COBRAR' aparecerá. Clicando nele, você envia uma mensagem pronta no WhatsApp com o valor devido e sua chave PIX.",
+                    "Toque no nome do passageiro para abrir os detalhes completos."
+                ]}
+            />
 
             <div className="search-bar" style={{ marginBottom: 20 }}>
                 <Search className="search-icon" size={20} />
