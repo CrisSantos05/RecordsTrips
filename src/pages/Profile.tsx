@@ -109,14 +109,16 @@ const Profile = ({ currentProfile, onLogout }: ProfileProps) => {
                 <div style={{ position: 'relative' }}>
                     <div className="avatar" style={{
                         width: 120, height: 120, borderRadius: '50%', margin: 0,
-                        background: 'linear-gradient(135deg, #eee, #f5f5f5)',
+                        background: 'linear-gradient(135deg, #1E88E5, #1565C0)', // Colored background for initials
                         overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         border: '4px solid white', boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                     }}>
                         {profile.avatar_url ? (
                             <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            <User size={60} color="#ccc" />
+                            <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'white' }}>
+                                {profile.full_name ? profile.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : <User size={60} color="white" />}
+                            </span>
                         )}
                     </div>
                     <label
