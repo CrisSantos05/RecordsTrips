@@ -24,6 +24,8 @@ body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg-light);
   color: var(--secondary);
+  overscroll-behavior-y: contain;
+  /* Prevent browser bounce, allow custom pull refresh */
   line-height: 1.5;
   overflow-x: hidden;
 }
@@ -195,6 +197,22 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
   appearance: none;
+  white-space: nowrap;
+}
+
+/* Pull to Refresh Styles */
+.ptr--ptr {
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.ptr--icon {
+  color: var(--primary) !important;
+}
+
+/* Ensure content can scroll inside the refresh wrapper */
+.ptr {
+  height: 100%;
 }
 
 .input-wrapper .icon {
