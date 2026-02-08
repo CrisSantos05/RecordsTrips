@@ -13,6 +13,7 @@ import PassengerDetails from './pages/PassengerDetails'
 import Admin from './pages/Admin'
 import Blocked from './pages/Blocked'
 import Login from './pages/Login'
+import Expenses from './pages/Expenses'
 import './index.css'
 
 const BottomNav = () => {
@@ -110,6 +111,7 @@ function App() {
                     <Route path="/passengers" element={<Passengers />} />
                     <Route path="/passenger/:id" element={<PassengerDetails />} />
                     <Route path="/admin" element={<Admin onLogout={handleLogout} />} />
+                    <Route path="/expenses" element={<Expenses />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
                 <BottomNav />

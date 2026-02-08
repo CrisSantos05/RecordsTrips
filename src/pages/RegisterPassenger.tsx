@@ -23,9 +23,6 @@ const RegisterPassenger = () => {
         let whatsappWindow: Window | null = null;
         if (cleanPhone) {
             whatsappWindow = window.open('', '_blank');
-            if (whatsappWindow) {
-                whatsappWindow.document.write('<html><body style="background:#25D366; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;"><h3>Gerando link do WhatsApp...</h3></body></html>');
-            }
         }
 
         setLoading(true)

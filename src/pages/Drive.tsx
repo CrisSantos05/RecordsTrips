@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft, HelpCircle, User, Calendar as CalendarIcon, DollarSign, CheckCircle2, Clock, Save, Plus, History as HistoryIcon } from 'lucide-react'
+import { ChevronLeft, HelpCircle, User, Calendar as CalendarIcon, DollarSign, CheckCircle2, Clock, Save, Plus, History as HistoryIcon, Receipt } from 'lucide-react'
 import HelpModal from '../components/HelpModal'
 import { supabase } from '../supabaseClient'
 import { Passenger } from '../types'
@@ -109,7 +109,10 @@ const Drive = () => {
       <header style={{ margin: '-20px -20px 20px -20px' }}>
         <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
         <h1>Nova Viagem</h1>
-        <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => navigate('/expenses')} style={{ color: '#ef4444' }}><Receipt /></button>
+          <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
+        </div>
       </header>
 
       <HelpModal

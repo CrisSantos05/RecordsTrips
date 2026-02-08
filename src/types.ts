@@ -39,3 +39,13 @@ export interface DriverProfile {
     email?: string;
     pix_key?: string;
 }
+
+export interface Expense {
+    id: string;
+    driver_id: string;
+    category: string;
+    amount: number;
+    description?: string;
+    expense_date: string;
+    created_at: string;
+}
