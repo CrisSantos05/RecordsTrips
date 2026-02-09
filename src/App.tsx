@@ -56,17 +56,22 @@ function App() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const savedProfile = localStorage.getItem('driver_profile')
-        if (savedProfile) {
-            const parsed = JSON.parse(savedProfile)
-            // Force re-login if the profile doesn't have the new fields (email)
-            // This ensures everyone uses the new Auth system
-            if (parsed && parsed.email) {
-                setProfile(parsed)
-            } else {
-                localStorage.removeItem('driver_profile')
-                setProfile(null)
+        try {
+            const savedProfile = localStorage.getItem('driver_profile')
+            if (savedProfile) {
+                const parsed = JSON.parse(savedProfile)
+                // Force re-login if the profile doesn't have the new fields (email)
+                // This ensures everyone uses the new Auth system
+                if (parsed && parsed.email) {
+                    setProfile(parsed)
+                } else {
+                    localStorage.removeItem('driver_profile')
+                    setProfile(null)
+                }
             }
+        } catch (err) {
+            console.error('Error parsing profile', err)
+            localStorage.removeItem('driver_profile')
         }
         setLoading(false)
     }, [])

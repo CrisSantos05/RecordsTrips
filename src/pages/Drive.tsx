@@ -6,7 +6,6 @@ import { Passenger } from '../types'
 import { Link, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import PullToRefresh from 'react-simple-pull-to-refresh'
 
 const Drive = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([])
@@ -113,207 +112,205 @@ const Drive = () => {
   }
 
   return (
-    <PullToRefresh onRefresh={handleRefresh} pullingContent="" refreshingContent="">
-      <div className="content">
-        <header style={{ margin: '-20px -20px 20px -20px' }}>
-          <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
-          <h1>Nova Viagem</h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => navigate('/expenses')} style={{ color: '#ef4444' }}><Receipt /></button>
-            <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
-          </div>
-        </header>
-
-        <HelpModal
-          isOpen={showHelp}
-          onClose={() => setShowHelp(false)}
-          title="Como usar esta página"
-          steps={[
-            "Selecione o passageiro na lista ou use a \"Seleção Rápida\" no topo.",
-            "Se o passageiro tiver dívidas pendentes, um card laranja aparecerá para você \"Quitar Tudo\" se desejar.",
-            "Digite o valor dos ganhos desta viagem.",
-            "Escolha se a viagem foi Paga agora ou se ficará Pendente.",
-            "Clique em \"Salvar Viagem\" para registrar permanentemente."
-          ]}
-        />
-
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, display: 'block' }}>SELEÇÃO RÁPIDA (RECENTES)</label>
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
-            {passengers.slice(0, 5).map(p => (
-              <div
-                key={p.id}
-                onClick={() => setSelectedPassenger(p)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 70, cursor: 'pointer',
-                  opacity: selectedPassenger?.id === p.id ? 1 : 0.6
-                }}
-              >
-                <div style={{
-                  width: 50, height: 50, borderRadius: '50%', background: '#eee',
-                  border: selectedPassenger?.id === p.id ? '2px solid var(--primary)' : '2px solid transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
-                }}>
-                  {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#999" />}
-                </div>
-                <span style={{ fontSize: '0.65rem', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', whiteSpace: 'nowrap' }}>
-                  {p.full_name.split(' ')[0]}
-                </span>
-              </div>
-            ))}
-          </div>
+    <div className="content">
+      <header style={{ margin: '-20px -20px 20px -20px' }}>
+        <button onClick={() => navigate(-1)} className="btn-back"><ChevronLeft /></button>
+        <h1>Nova Viagem</h1>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => navigate('/expenses')} style={{ color: '#ef4444' }}><Receipt /></button>
+          <button onClick={() => setShowHelp(true)}><HelpCircle /></button>
         </div>
+      </header>
 
-        {/* Passenger Selection */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: 20 }}>
-          <div className="avatar" style={{ marginRight: 0 }}>
-            {selectedPassenger?.avatar_url ? (
-              <img src={selectedPassenger.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0e0e0' }}>
-                <User color="#999" />
-              </div>
-            )}
-          </div>
-          <div style={{ flex: 1 }}>
-            <select
-              style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 600, outline: 'none' }}
-              value={selectedPassenger?.id || ''}
-              onChange={(e) => {
-                const p = passengers.find(p => p.id === e.target.value)
-                setSelectedPassenger(p || null)
-              }}
-            >
-              <option value="">Selecionar Passageiro</option>
-              {passengers.map(p => (
-                <option key={p.id} value={p.id}>{p.full_name}</option>
-              ))}
-            </select>
-            <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>
-              {selectedPassenger ? `${selectedPassenger.passenger_class}` : 'Selecione para registrar'}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            {selectedPassenger && (
-              <Link to={`/passenger/${selectedPassenger.id}`} style={{ color: '#666' }}>
-                <HistoryIcon size={24} />
-              </Link>
-            )}
-            <Link to="/register-passenger" style={{ color: 'var(--primary)' }}>
-              <Plus size={24} />
-            </Link>
-          </div>
-        </div>
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        title="Como usar esta página"
+        steps={[
+          "Selecione o passageiro na lista ou use a \"Seleção Rápida\" no topo.",
+          "Se o passageiro tiver dívidas pendentes, um card laranja aparecerá para você \"Quitar Tudo\" se desejar.",
+          "Digite o valor dos ganhos desta viagem.",
+          "Escolha se a viagem foi Paga agora ou se ficará Pendente.",
+          "Clique em \"Salvar Viagem\" para registrar permanentemente."
+        ]}
+      />
 
-        {pendingBalance > 0 && (
-          <div className="card" style={{
-            background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)',
-            border: '1px solid #FFCC80',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '15px',
-            marginBottom: '20px',
-            animation: 'slideDown 0.3s ease-out'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Clock size={24} color="#BF360C" />
-              <div>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#E65100', textTransform: 'uppercase' }}>Dívida Pendente</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#BF360C' }}>R$ {pendingBalance.toFixed(2)}</div>
-              </div>
-            </div>
-            <button
-              onClick={handleSettleBalance}
-              disabled={loading}
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, display: 'block' }}>SELEÇÃO RÁPIDA (RECENTES)</label>
+        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
+          {passengers.slice(0, 5).map(p => (
+            <div
+              key={p.id}
+              onClick={() => setSelectedPassenger(p)}
               style={{
-                backgroundColor: '#BF360C',
-                color: 'white',
-                border: 'none',
-                padding: '10px 15px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 10px rgba(191, 54, 12, 0.2)'
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 70, cursor: 'pointer',
+                opacity: selectedPassenger?.id === p.id ? 1 : 0.6
               }}
             >
-              QUITAR TUDO
-            </button>
-          </div>
-        )}
-
-        <div className="input-group">
-          <label>DATA DA VIAGEM</label>
-          <div className="card" style={{ padding: '15px', marginBottom: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
-              <span>{format(new Date(), 'MMMM yyyy', { locale: ptBR })}</span>
-            </div>
-            <div style={{ marginTop: '15px', textAlign: 'center' }}>
-              <div style={{ display: 'inline-block', background: 'var(--primary)', color: 'white', width: '40px', height: '40px', lineHeight: '40px', borderRadius: '50%', fontWeight: 700 }}>
-                {format(new Date(), 'd', { locale: ptBR })}
+              <div style={{
+                width: 50, height: 50, borderRadius: '50%', background: '#eee',
+                border: selectedPassenger?.id === p.id ? '2px solid var(--primary)' : '2px solid transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+              }}>
+                {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#999" />}
               </div>
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', whiteSpace: 'nowrap' }}>
+                {p.full_name.split(' ')[0]}
+              </span>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Passenger Selection */}
+      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: 20 }}>
+        <div className="avatar" style={{ marginRight: 0 }}>
+          {selectedPassenger?.avatar_url ? (
+            <img src={selectedPassenger.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0e0e0' }}>
+              <User color="#999" />
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <select
+            style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '1.2rem', fontWeight: 600, outline: 'none' }}
+            value={selectedPassenger?.id || ''}
+            onChange={(e) => {
+              const p = passengers.find(p => p.id === e.target.value)
+              setSelectedPassenger(p || null)
+            }}
+          >
+            <option value="">Selecionar Passageiro</option>
+            {passengers.map(p => (
+              <option key={p.id} value={p.id}>{p.full_name}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>
+            {selectedPassenger ? `${selectedPassenger.passenger_class}` : 'Selecione para registrar'}
           </div>
         </div>
-
-        <div className="input-group">
-          <label>GANHOS</label>
-          <div className="card" style={{ padding: '15px', marginBottom: 0 }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 5 }}>TOTAL DA VIAGEM</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>R$</span>
-              <input
-                type="number"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                style={{ border: 'none', fontSize: '2.5rem', fontWeight: 700, width: '100%', outline: 'none', color: '#333' }}
-              />
-            </div>
-          </div>
-        </div >
-
-        <div className="input-group">
-          <label>STATUS DO PAGAMENTO</label>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              className={`tab ${status === 'paid' ? 'active' : ''}`}
-              onClick={() => setStatus('paid')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: status === 'paid' ? 'var(--primary)' : 'white', color: status === 'paid' ? 'white' : 'inherit' }}
-            >
-              <CheckCircle2 size={18} /> Pago
-            </button>
-            <button
-              className={`tab ${status === 'pending' ? 'active' : ''}`}
-              onClick={() => setStatus('pending')}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: status === 'pending' ? 'var(--pending)' : 'white', color: status === 'pending' ? 'white' : 'inherit' }}
-            >
-              <Clock size={18} /> Pendente
-            </button>
-          </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {selectedPassenger && (
+            <Link to={`/passenger/${selectedPassenger.id}`} style={{ color: '#666' }}>
+              <HistoryIcon size={24} />
+            </Link>
+          )}
+          <Link to="/register-passenger" style={{ color: 'var(--primary)' }}>
+            <Plus size={24} />
+          </Link>
         </div>
+      </div>
 
-        <div className="card" style={{ padding: '15px' }}>
+      {pendingBalance > 0 && (
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)',
+          border: '1px solid #FFCC80',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '15px',
+          marginBottom: '20px',
+          animation: 'slideDown 0.3s ease-out'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ color: '#E0E0E0' }}>=</div>
-            <input
-              placeholder="Adicionar observações..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={{ border: 'none', width: '100%', outline: 'none' }}
-            />
-            <ChevronLeft size={18} style={{ transform: 'rotate(180deg)', color: '#E0E0E0' }} />
+            <Clock size={24} color="#BF360C" />
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#E65100', textTransform: 'uppercase' }}>Dívida Pendente</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#BF360C' }}>R$ {pendingBalance.toFixed(2)}</div>
+            </div>
+          </div>
+          <button
+            onClick={handleSettleBalance}
+            disabled={loading}
+            style={{
+              backgroundColor: '#BF360C',
+              color: 'white',
+              border: 'none',
+              padding: '10px 15px',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(191, 54, 12, 0.2)'
+            }}
+          >
+            QUITAR TUDO
+          </button>
+        </div>
+      )}
+
+      <div className="input-group">
+        <label>DATA DA VIAGEM</label>
+        <div className="card" style={{ padding: '15px', marginBottom: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
+            <span>{format(new Date(), 'MMMM yyyy', { locale: ptBR })}</span>
+          </div>
+          <div style={{ marginTop: '15px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-block', background: 'var(--primary)', color: 'white', width: '40px', height: '40px', lineHeight: '40px', borderRadius: '50%', fontWeight: 700 }}>
+              {format(new Date(), 'd', { locale: ptBR })}
+            </div>
           </div>
         </div>
+      </div>
 
-        <button className="btn-primary" onClick={handleSaveTrip} disabled={loading}>
-          <Save /> {loading ? 'Salvando...' : 'Salvar Viagem'}
-        </button>
-
-        <button style={{ width: '100%', padding: '15px', color: 'var(--text-muted)', fontWeight: 500 }}>Limpar Formulário</button>
+      <div className="input-group">
+        <label>GANHOS</label>
+        <div className="card" style={{ padding: '15px', marginBottom: 0 }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 5 }}>TOTAL DA VIAGEM</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+            <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>R$</span>
+            <input
+              type="number"
+              placeholder="0,00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              style={{ border: 'none', fontSize: '2.5rem', fontWeight: 700, width: '100%', outline: 'none', color: '#333' }}
+            />
+          </div>
+        </div>
       </div >
-    </PullToRefresh>
+
+      <div className="input-group">
+        <label>STATUS DO PAGAMENTO</label>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className={`tab ${status === 'paid' ? 'active' : ''}`}
+            onClick={() => setStatus('paid')}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: status === 'paid' ? 'var(--primary)' : 'white', color: status === 'paid' ? 'white' : 'inherit' }}
+          >
+            <CheckCircle2 size={18} /> Pago
+          </button>
+          <button
+            className={`tab ${status === 'pending' ? 'active' : ''}`}
+            onClick={() => setStatus('pending')}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: status === 'pending' ? 'var(--pending)' : 'white', color: status === 'pending' ? 'white' : 'inherit' }}
+          >
+            <Clock size={18} /> Pendente
+          </button>
+        </div>
+      </div>
+
+      <div className="card" style={{ padding: '15px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ color: '#E0E0E0' }}>=</div>
+          <input
+            placeholder="Adicionar observações..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            style={{ border: 'none', width: '100%', outline: 'none' }}
+          />
+          <ChevronLeft size={18} style={{ transform: 'rotate(180deg)', color: '#E0E0E0' }} />
+        </div>
+      </div>
+
+      <button className="btn-primary" onClick={handleSaveTrip} disabled={loading}>
+        <Save /> {loading ? 'Salvando...' : 'Salvar Viagem'}
+      </button>
+
+      <button style={{ width: '100%', padding: '15px', color: 'var(--text-muted)', fontWeight: 500 }}>Limpar Formulário</button>
+    </div >
   )
 }
 
