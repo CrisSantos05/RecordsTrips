@@ -16,7 +16,30 @@
 
 <body>
   <div id="root"></div>
+  <div style="position: fixed; bottom: 80px; right: 10px; font-size: 10px; color: #888; z-index: 1000; opacity: 0.5;">
+    v.0.1</div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('SW registered: ', registration);
+
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New version found, force reload
+                window.location.reload();
+              }
+            });
+          });
+        }).catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
+      });
+    }
+  </script>
 </body>
 
 </html>
